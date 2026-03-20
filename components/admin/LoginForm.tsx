@@ -4,13 +4,16 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/admin/Button";
+import { useFeedbackModal } from "@/components/admin/FeedbackModalProvider";
 import { Field, Input } from "@/components/admin/Form";
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
   const router = useRouter();
+  const feedback = useFeedbackModal();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +23,10 @@ export function LoginForm() {
     setLoading(true);
 
     try {
+      feedback.showLoading({
+        title: "Verificando acceso",
+        description: "Estamos validando tus credenciales de administrador.",
+      });
       const supabase = createClient();
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
@@ -30,11 +37,17 @@ export function LoginForm() {
         throw signInError;
       }
 
+      feedback.close();
       router.replace("/admin/dashboard");
       router.refresh();
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : "No se pudo iniciar sesión.";
       setError(message);
+      feedback.close();
+      await feedback.showError({
+        title: "Credenciales inválidas",
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -43,7 +56,7 @@ export function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-8">
       <div className="grid w-full max-w-5xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <section className="rounded-[36px] border border-[var(--color-line)] bg-[linear-gradient(155deg,rgba(242,166,90,0.2),rgba(75,134,200,0.08),rgba(242,232,221,0.9))] p-8 shadow-[0_24px_120px_rgba(0,0,0,0.35)] backdrop-blur sm:p-10">
+        <section className="hidden rounded-[36px] border border-[var(--color-line)] bg-[linear-gradient(155deg,rgba(242,166,90,0.2),rgba(75,134,200,0.08),rgba(242,232,221,0.9))] p-8 shadow-[0_24px_120px_rgba(0,0,0,0.35)] backdrop-blur sm:p-10 lg:block">
           <div className="text-xs font-semibold tracking-[0.24em] text-[rgba(96,74,56,0.6)] uppercase">
             Daiza / Panel interno
           </div>
@@ -68,7 +81,7 @@ export function LoginForm() {
           </div>
         </section>
 
-        <section className="rounded-[36px] border border-[var(--color-line)] bg-[rgba(252,245,237,0.82)] p-8 shadow-[0_24px_120px_rgba(0,0,0,0.35)] backdrop-blur sm:p-10">
+        <section className="rounded-[32px] border border-[var(--color-line)] bg-[rgba(252,245,237,0.9)] p-6 shadow-[0_24px_120px_rgba(0,0,0,0.18)] backdrop-blur sm:p-8 lg:rounded-[36px] lg:p-10 lg:shadow-[0_24px_120px_rgba(0,0,0,0.35)]">
           <div className="text-xs font-semibold tracking-[0.24em] text-[rgba(96,74,56,0.6)] uppercase">
             Acceso administrador
           </div>
@@ -89,14 +102,37 @@ export function LoginForm() {
               />
             </Field>
             <Field label="Contraseña">
-              <Input
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="pr-12"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[rgba(96,74,56,0.58)] transition hover:text-[var(--color-paper)]"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M3 3l18 18" />
+                      <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7" />
+                      <path d="M9.4 5.5A10.7 10.7 0 0 1 12 5.2c5.2 0 9.3 4.1 10 6.8a11.8 11.8 0 0 1-3.7 4.9" />
+                      <path d="M6.6 6.7A12 12 0 0 0 2 12c.7 2.7 4.8 6.8 10 6.8 1.5 0 2.9-.3 4.2-.8" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M2 12s3.6-6.8 10-6.8S22 12 22 12s-3.6 6.8-10 6.8S2 12 2 12Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </Field>
             {error ? <div className="text-sm text-[var(--color-danger)]">{error}</div> : null}
             <Button type="submit" className="w-full" disabled={loading}>

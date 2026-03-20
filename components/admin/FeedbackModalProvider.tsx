@@ -76,6 +76,28 @@ function FeedbackIcon({ tone }: { tone: FeedbackTone }) {
   );
 }
 
+function getToneCopy(tone: FeedbackTone) {
+  return {
+    loading: "Procesando",
+    success: "Éxito",
+    warning: "Advertencia",
+    error: "Error",
+  }[tone];
+}
+
+function getToneSurface(tone: FeedbackTone) {
+  return {
+    loading:
+      "border-[rgba(75,134,200,0.12)] bg-[linear-gradient(180deg,rgba(75,134,200,0.12),rgba(255,255,255,0))]",
+    success:
+      "border-[rgba(47,143,89,0.12)] bg-[linear-gradient(180deg,rgba(47,143,89,0.12),rgba(255,255,255,0))]",
+    warning:
+      "border-[rgba(229,161,91,0.14)] bg-[linear-gradient(180deg,rgba(229,161,91,0.14),rgba(255,255,255,0))]",
+    error:
+      "border-[rgba(207,101,102,0.14)] bg-[linear-gradient(180deg,rgba(207,101,102,0.14),rgba(255,255,255,0))]",
+  }[tone];
+}
+
 export function FeedbackModalProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<FeedbackState>(INITIAL_STATE);
   const [warningResolver, setWarningResolver] = useState<((value: boolean) => void) | null>(null);
@@ -167,75 +189,97 @@ export function FeedbackModalProvider({ children }: { children: ReactNode }) {
 
       {state.open ? (
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(37,30,24,0.32)] p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-[rgba(37,30,24,0.42)] p-4 backdrop-blur-md"
           onClick={dismissible ? close : undefined}
         >
           <div
-            className="w-full max-w-md rounded-[28px] border border-[rgba(96,74,56,0.08)] bg-[rgba(255,252,247,0.98)] p-6 shadow-[0_26px_90px_rgba(30,24,20,0.18)]"
+            className="w-full max-w-[540px] overflow-hidden rounded-[30px] border border-[rgba(96,74,56,0.08)] bg-[rgba(255,252,247,0.98)] shadow-[0_32px_100px_rgba(30,24,20,0.22)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start gap-4">
-              <FeedbackIcon tone={state.tone} />
-              <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-semibold tracking-[0.18em] text-[rgba(96,74,56,0.48)] uppercase">
-                  {state.tone === "loading"
-                    ? "Procesando"
-                    : state.tone === "success"
-                      ? "Éxito"
-                      : state.tone === "warning"
-                        ? "Advertencia"
-                        : "Error"}
+            <div className={`border-b px-5 py-5 sm:px-6 ${getToneSurface(state.tone)}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <FeedbackIcon tone={state.tone} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-semibold tracking-[0.2em] text-[rgba(96,74,56,0.48)] uppercase">
+                      {getToneCopy(state.tone)}
+                    </div>
+                    <h3 className="mt-2 text-[28px] font-semibold leading-none tracking-[-0.03em] text-[var(--color-paper)] sm:text-[32px]">
+                      {state.title}
+                    </h3>
+                  </div>
                 </div>
-                <h3 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-[var(--color-paper)]">
-                  {state.title}
-                </h3>
-                {state.description ? (
-                  <p className="mt-3 text-sm leading-6 text-[rgba(96,74,56,0.66)]">{state.description}</p>
+
+                {dismissible ? (
+                  <button
+                    type="button"
+                    onClick={close}
+                    className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[rgba(96,74,56,0.08)] bg-[rgba(255,255,255,0.76)] text-[rgba(96,74,56,0.58)] transition hover:text-[var(--color-paper)]"
+                    aria-label="Cerrar modal"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 6l12 12" />
+                      <path d="M18 6 6 18" />
+                    </svg>
+                  </button>
                 ) : null}
               </div>
             </div>
 
-            {state.tone === "loading" ? (
-              <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-[rgba(96,74,56,0.08)]">
-                <div className="h-full w-1/3 animate-[feedback-progress_1.2s_ease-in-out_infinite] rounded-full bg-[var(--color-highlight-strong)]" />
-              </div>
-            ) : null}
+            <div className="px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
+              {state.description ? (
+                <p className="text-sm leading-7 text-[rgba(96,74,56,0.68)] sm:text-[15px]">{state.description}</p>
+              ) : null}
 
-            {state.tone === "warning" ? (
-              <div className="mt-6 flex flex-wrap justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    warningResolver?.(false);
-                    setWarningResolver(null);
-                    setDismissResolver(null);
-                    setState(INITIAL_STATE);
-                  }}
-                >
-                  {state.cancelLabel || "Cancelar"}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    warningResolver?.(true);
-                    setWarningResolver(null);
-                    setDismissResolver(null);
-                    setState(INITIAL_STATE);
-                  }}
-                >
-                  {state.confirmLabel || "Continuar"}
-                </Button>
-              </div>
-            ) : null}
+              {state.tone === "loading" ? (
+                <div className="mt-6 space-y-3">
+                  <div className="h-2 overflow-hidden rounded-full bg-[rgba(96,74,56,0.08)]">
+                    <div className="h-full w-1/3 animate-[feedback-progress_1.2s_ease-in-out_infinite] rounded-full bg-[var(--color-highlight-strong)]" />
+                  </div>
+                  <div className="text-xs text-[rgba(96,74,56,0.5)]">
+                    Esto puede tomar unos segundos.
+                  </div>
+                </div>
+              ) : null}
 
-            {state.tone === "success" || state.tone === "error" ? (
-              <div className="mt-6 flex justify-end">
-                <Button type="button" onClick={close}>
-                  {state.confirmLabel}
-                </Button>
-              </div>
-            ) : null}
+              {state.tone === "warning" ? (
+                <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      warningResolver?.(false);
+                      setWarningResolver(null);
+                      setDismissResolver(null);
+                      setState(INITIAL_STATE);
+                    }}
+                  >
+                    {state.cancelLabel || "Cancelar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      warningResolver?.(true);
+                      setWarningResolver(null);
+                      setDismissResolver(null);
+                      setState(INITIAL_STATE);
+                    }}
+                  >
+                    {state.confirmLabel || "Continuar"}
+                  </Button>
+                </div>
+              ) : null}
+
+              {state.tone === "success" || state.tone === "error" ? (
+                <div className="mt-7 flex justify-end">
+                  <Button type="button" className="w-full sm:w-auto" onClick={close}>
+                    {state.confirmLabel}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}
