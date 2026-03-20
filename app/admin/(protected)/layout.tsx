@@ -30,7 +30,6 @@ export default async function ProtectedAdminLayout({
 
   return (
     <AdminShell
-      userEmail={access.user?.email}
       businessName={settings?.business_name ?? "Daiza"}
       logoUrl={settings?.admin_logo_url ?? null}
     >

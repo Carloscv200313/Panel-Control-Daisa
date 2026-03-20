@@ -207,7 +207,8 @@ export function CatalogSettings() {
     const parsed = categorySchema.safeParse(categoryForm);
     if (!parsed.success) {
       const nextErrors = Object.fromEntries(
-        parsed.error.issues.map((issue) => [String(issue.path[0]), issue.message])),
+        parsed.error.issues.map((issue) => [String(issue.path[0]), issue.message]),
+      );
       setCategoryFieldErrors(nextErrors);
       void feedback.showWarning({
         title: "Revisa la categoría",

@@ -76,12 +76,10 @@ function NavIcon({ href }: { href: string }) {
 }
 
 export function AdminShell({
-  userEmail,
   businessName,
   logoUrl,
   children,
 }: {
-  userEmail?: string;
   businessName?: string;
   logoUrl?: string | null;
   children: ReactNode;
