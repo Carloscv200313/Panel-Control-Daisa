@@ -55,6 +55,9 @@ export const productSchema = z
     description: z.string().trim().min(4, "Agrega una descripción mínima"),
     brand_id: z.union([z.literal(""), z.string().uuid("Selecciona una marca válida")]),
     category_id: z.union([z.literal(""), z.string().uuid("Selecciona una categoría válida")]),
+    gender: z.enum(["male", "female", "unisex"], {
+      message: "Selecciona el género del producto",
+    }),
     product_type: z.enum(["single", "bundle"]),
     is_active: z.boolean().default(true),
     images: z.array(uploadedImageSchema).min(1, "Sube al menos una imagen"),

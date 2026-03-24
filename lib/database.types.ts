@@ -9,6 +9,7 @@ export type Json =
 export type DbId = string | number;
 
 export type ProductCategory = "Varón" | "Mujer" | "Unisex";
+export type ProductGender = "male" | "female" | "unisex";
 export type ProductType = "single" | "bundle";
 export type ProductSize = "S" | "M" | "L" | "XL" | "XXL";
 
@@ -149,6 +150,7 @@ export interface Database {
           id: DbId;
           brand_id: DbId | null;
           category_id: DbId | null;
+          gender: ProductGender | null;
           name: string;
           description: string | null;
           product_type: ProductType;
@@ -161,6 +163,7 @@ export interface Database {
           id?: DbId;
           brand_id?: DbId | null;
           category_id?: DbId | null;
+          gender?: ProductGender | null;
           name: string;
           description?: string | null;
           product_type?: ProductType;
@@ -173,6 +176,7 @@ export interface Database {
           id?: DbId;
           brand_id?: DbId | null;
           category_id?: DbId | null;
+          gender?: ProductGender | null;
           name?: string;
           description?: string | null;
           product_type?: ProductType;

@@ -18,6 +18,16 @@ import {
 import { formatDate, formatNumber } from "@/lib/admin/format";
 import { createClient } from "@/lib/supabase/client";
 
+function formatGenderLabel(gender: ProductListItem["gender"]) {
+  return (
+    {
+      male: "Varón",
+      female: "Mujer",
+      unisex: "Unisex",
+    }[gender ?? "unisex"]
+  );
+}
+
 export function ProductsList() {
   const [products, setProducts] = useState<ProductListItem[]>([]);
   const [search, setSearch] = useState("");
@@ -123,6 +133,12 @@ export function ProductsList() {
                 <StatusBadge tone="neutral">{product.product_type === "single" ? "individual" : "paquete"}</StatusBadge>
                 ),
               },
+            {
+              header: "Género",
+              render: (product) => (
+                <StatusBadge tone="neutral">{formatGenderLabel(product.gender)}</StatusBadge>
+              ),
+            },
             {
               header: "Estado",
               render: (product) => (

@@ -29,7 +29,7 @@ import {
   type ProductFormCatalogs,
   type ProductVariantFormValue,
 } from "@/lib/admin/data";
-import type { DbId, ProductSize, ProductType } from "@/lib/database.types";
+import type { DbId, ProductGender, ProductSize, ProductType } from "@/lib/database.types";
 import { productSchema } from "@/lib/admin/schemas";
 import { createClient } from "@/lib/supabase/client";
 
@@ -40,6 +40,7 @@ interface VariantDraft extends ProductVariantFormValue {
 interface ProductFormState {
   brand_id: string;
   category_id: string;
+  gender: ProductGender;
   name: string;
   description: string;
   product_type: ProductType;
@@ -52,6 +53,7 @@ interface ProductFormState {
 const initialState: ProductFormState = {
   brand_id: "",
   category_id: "",
+  gender: "unisex",
   name: "",
   description: "",
   product_type: "single",
@@ -108,6 +110,16 @@ function mapVariantDraft(variant: ProductVariantFormValue): VariantDraft {
   };
 }
 
+function formatGenderLabel(gender: ProductGender) {
+  return (
+    {
+      male: "Varón",
+      female: "Mujer",
+      unisex: "Unisex",
+    }[gender]
+  );
+}
+
 export function ProductEditor({ productId }: { productId?: string }) {
   const router = useRouter();
   const isEditing = Boolean(productId);
@@ -147,6 +159,7 @@ export function ProductEditor({ productId }: { productId?: string }) {
       setForm({
         brand_id: data.product.brand_id ? String(data.product.brand_id) : "",
         category_id: data.product.category_id ? String(data.product.category_id) : "",
+        gender: data.product.gender ?? "unisex",
         name: data.product.name,
         description: data.product.description ?? "",
         product_type: data.product.product_type,
@@ -308,6 +321,22 @@ export function ProductEditor({ productId }: { productId?: string }) {
         >
           <div className="grid gap-5 lg:grid-cols-2">
             <Field
+              label="Género"
+              error={fieldErrors.gender}
+              hint="Identifica si el producto está orientado a varón, mujer o unisex."
+            >
+              <Select
+                value={form.gender}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, gender: event.target.value as ProductGender }))
+                }
+              >
+                <option value="male">Varón</option>
+                <option value="female">Mujer</option>
+                <option value="unisex">Unisex</option>
+              </Select>
+            </Field>
+            <Field
               label="Marca"
               hint={catalogs.brands.length === 0 ? "No hay marcas disponibles todavía." : undefined}
               error={fieldErrors.brand_id}
@@ -324,6 +353,9 @@ export function ProductEditor({ productId }: { productId?: string }) {
                 ))}
               </Select>
             </Field>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
             <Field
               label="Categoría"
               hint={catalogs.categories.length === 0 ? "No hay categorías disponibles todavía." : undefined}
@@ -341,9 +373,6 @@ export function ProductEditor({ productId }: { productId?: string }) {
                 ))}
               </Select>
             </Field>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-2">
             <Field label="Nombre" error={fieldErrors.name}>
               <Input
                 value={form.name}
@@ -362,14 +391,36 @@ export function ProductEditor({ productId }: { productId?: string }) {
             </Field>
           </div>
 
-          <Field label="Descripción" error={fieldErrors.description}>
-            <Textarea
-              rows={5}
-              value={form.description}
-              onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-              placeholder="Describe telas, beneficio comercial y composición visual del producto."
-            />
-          </Field>
+          <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
+            <Field label="Descripción" error={fieldErrors.description}>
+              <Textarea
+                rows={5}
+                value={form.description}
+                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Describe telas, beneficio comercial y composición visual del producto."
+              />
+            </Field>
+
+            <div className="rounded-[18px] border border-[rgba(96,74,56,0.08)] bg-[rgba(248,239,229,0.38)] px-4 py-4">
+              <div className="text-[11px] font-semibold tracking-[0.16em] text-[rgba(96,74,56,0.5)] uppercase">
+                Resumen
+              </div>
+              <div className="mt-3 space-y-3 text-sm text-[rgba(96,74,56,0.72)]">
+                <div>
+                  <div className="font-semibold text-[var(--color-paper)]">Género</div>
+                  <div>{formatGenderLabel(form.gender)}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-[var(--color-paper)]">Tipo</div>
+                  <div>{form.product_type === "single" ? "Individual" : "Paquete"}</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-[var(--color-paper)]">Estado</div>
+                  <div>{form.is_active ? "Activo" : "Inactivo"}</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <Toggle
             checked={form.is_active}

@@ -32,7 +32,7 @@ export interface DashboardSnapshot {
 
 export type ProductListItem = Pick<
   TableRow<"products">,
-  "id" | "name" | "product_type" | "is_active" | "requested_count" | "updated_at"
+  "id" | "name" | "gender" | "product_type" | "is_active" | "requested_count" | "updated_at"
 >;
 
 export type BrandListItem = Pick<TableRow<"brands">, "id" | "name" | "created_at">;
@@ -82,6 +82,10 @@ function asErrorMessage(error: unknown, fallback: string) {
 
 export function getErrorMessage(error: unknown, fallback: string) {
   return asErrorMessage(error, fallback);
+}
+
+function isMissingProductGenderColumn(message: string) {
+  return message.includes("gender") && message.includes("products");
 }
 
 async function unwrap<T>(promise: PromiseLike<{ data: T; error: { message?: string } | null }>) {
@@ -341,7 +345,7 @@ export async function fetchProducts(supabase: BrowserSupabaseClient) {
   return unwrap(
     supabase
       .from("products")
-      .select("id, name, product_type, is_active, requested_count, updated_at")
+      .select("*")
       .order("updated_at", { ascending: false }),
   ) as Promise<ProductListItem[]>;
 }
@@ -608,28 +612,47 @@ export async function saveProduct(
   const row: TableInsert<"products"> = {
     brand_id: payload.brand_id || null,
     category_id: payload.category_id || null,
+    gender: payload.gender,
     name: payload.name,
     description: payload.description,
     product_type: payload.product_type,
     is_active: payload.is_active,
   };
 
-  const product = productId
-    ? await unwrap(
-        supabase
-          .from("products")
-          .update(row)
-          .eq("id", productId)
-          .select("*")
-          .single(),
-      )
-    : await unwrap(
-        supabase
-          .from("products")
-          .insert(row)
-          .select("*")
-          .single(),
+  let product: TableRow<"products">;
+
+  try {
+    product = productId
+      ? await unwrap(
+          supabase
+            .from("products")
+            .update(row)
+            .eq("id", productId)
+            .select("*")
+            .single(),
+        )
+      : await unwrap(
+          supabase
+            .from("products")
+            .insert(row)
+            .select("*")
+            .single(),
+        );
+  } catch (error) {
+    const message = asErrorMessage(error, "No se pudo guardar el producto.");
+
+    if (isMissingProductGenderColumn(message)) {
+      throw new Error(
+        "Falta la columna `products.gender` en Supabase. Ejecuta la migración SQL de género del producto y vuelve a intentar.",
       );
+    }
+
+    throw error;
+  }
+
+  if (!product) {
+    throw new Error("No se pudo guardar el producto.");
+  }
 
   const resolvedProductId = product.id;
   await replaceProductImages(supabase, resolvedProductId, payload.images);
